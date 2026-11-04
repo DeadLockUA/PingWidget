@@ -28,7 +28,7 @@
                             </TextBlock>
                             <TextBlock Text="{Binding Address}" Foreground="#dddddd" TextTrimming="CharacterEllipsis" />
                         </DockPanel>
-                        <w:HeartbeatChart Height="34" Samples="{Binding Samples}" ThresholdMs="{Binding ThresholdMs}" />
+                        <w:HeartbeatChart Height="34" Values="{Binding Values}" Threshold="{Binding ThresholdMs}" />
                     </StackPanel>
                 </DataTemplate>
             </ItemsControl.ItemTemplate>

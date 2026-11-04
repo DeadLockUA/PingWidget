@@ -25,10 +25,13 @@ public sealed class HostRowViewModel : INotifyPropertyChanged
         {
             _samples = value;
             Raise(nameof(Samples));
+            Raise(nameof(Values));
             Raise(nameof(CurrentText));
             Raise(nameof(IsAboveThreshold));
         }
     }
+
+    public IReadOnlyList<double?> Values => _samples.Select(s => (double?)s.RoundtripMs).ToArray();
 
     public string CurrentText =>
         _samples.Count > 0 && _samples[^1].RoundtripMs is long ms ? $"{ms} ms" : "—";

@@ -50,4 +50,15 @@ public class HostRowViewModelTests
         Assert.Contains(nameof(HostRowViewModel.CurrentText), changed);
         Assert.Contains(nameof(HostRowViewModel.IsAboveThreshold), changed);
     }
+
+    [Fact]
+    public void ValuesProjectSamples()
+    {
+        var vm = new HostRowViewModel("x", 10);
+        var changed = new List<string?>();
+        vm.PropertyChanged += (_, e) => changed.Add(e.PropertyName);
+        vm.Samples = [S(5), S(null)];
+        Assert.Equal(new double?[] { 5, null }, vm.Values);
+        Assert.Contains(nameof(HostRowViewModel.Values), changed);
+    }
 }

@@ -65,4 +65,25 @@ public class ChartGeometryTests
         Assert.Equal(119, l.Segments.Count);
         Assert.Equal(0, l.Segments[0].X1, 6);
     }
+
+    [Fact]
+    public void Values_FixedMax_ScalesToFixedMax()
+    {
+        var l = ChartGeometry.Compute(new double?[] { 50, 50 }, 90, W, H, capacity: 120, fixedMax: 100);
+        Assert.Equal(17, l.Segments.Single().Y1, 6);
+    }
+
+    [Fact]
+    public void Values_FixedMax_ClampsAbove()
+    {
+        var l = ChartGeometry.Compute(new double?[] { 150, 150 }, 90, W, H, capacity: 120, fixedMax: 100);
+        Assert.Equal(2, l.Segments.Single().Y2, 6);
+    }
+
+    [Fact]
+    public void Values_Null_IsLossBar()
+    {
+        var l = ChartGeometry.Compute(new double?[] { 1, null, 1 }, 90, W, H, capacity: 120);
+        Assert.Equal(new[] { 118.0 }, l.LossBarsX);
+    }
 }

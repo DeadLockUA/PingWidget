@@ -7,24 +7,35 @@ namespace PingWidget.Widget;
 /// <summary>Draws one host's heartbeat line from <see cref="ChartGeometry"/>.</summary>
 public sealed class HeartbeatChart : FrameworkElement
 {
-    public static readonly DependencyProperty SamplesProperty = DependencyProperty.Register(
-        nameof(Samples), typeof(IReadOnlyList<PingSample>), typeof(HeartbeatChart),
-        new FrameworkPropertyMetadata(Array.Empty<PingSample>(), FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty ValuesProperty = DependencyProperty.Register(
+        nameof(Values), typeof(IReadOnlyList<double?>), typeof(HeartbeatChart),
+        new FrameworkPropertyMetadata(Array.Empty<double?>(), FrameworkPropertyMetadataOptions.AffectsRender));
 
-    public static readonly DependencyProperty ThresholdMsProperty = DependencyProperty.Register(
-        nameof(ThresholdMs), typeof(int), typeof(HeartbeatChart),
-        new FrameworkPropertyMetadata(100, FrameworkPropertyMetadataOptions.AffectsRender));
+    public static readonly DependencyProperty ThresholdProperty = DependencyProperty.Register(
+        nameof(Threshold), typeof(double), typeof(HeartbeatChart),
+        new FrameworkPropertyMetadata(100.0, FrameworkPropertyMetadataOptions.AffectsRender));
 
-    public IReadOnlyList<PingSample> Samples
+    /// <summary>Fixed top of the scale; NaN = automatic (as for ping).</summary>
+    public static readonly DependencyProperty FixedMaxProperty = DependencyProperty.Register(
+        nameof(FixedMax), typeof(double), typeof(HeartbeatChart),
+        new FrameworkPropertyMetadata(double.NaN, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public IReadOnlyList<double?> Values
     {
-        get => (IReadOnlyList<PingSample>)GetValue(SamplesProperty);
-        set => SetValue(SamplesProperty, value);
+        get => (IReadOnlyList<double?>)GetValue(ValuesProperty);
+        set => SetValue(ValuesProperty, value);
     }
 
-    public int ThresholdMs
+    public double Threshold
     {
-        get => (int)GetValue(ThresholdMsProperty);
-        set => SetValue(ThresholdMsProperty, value);
+        get => (double)GetValue(ThresholdProperty);
+        set => SetValue(ThresholdProperty, value);
+    }
+
+    public double FixedMax
+    {
+        get => (double)GetValue(FixedMaxProperty);
+        set => SetValue(FixedMaxProperty, value);
     }
 
     private static readonly Color Red = Color.FromRgb(0xff, 0x4d, 0x4d);
@@ -48,11 +59,12 @@ public sealed class HeartbeatChart : FrameworkElement
         if (w <= 0 || h <= 0) return;
 
         dc.DrawRectangle(ChartBackground, null, new Rect(0, 0, w, h));
-        var layout = ChartGeometry.Compute(Samples ?? Array.Empty<PingSample>(), ThresholdMs, w, h);
+        var layout = ChartGeometry.Compute(Values ?? Array.Empty<double?>(), Threshold, w, h,
+            fixedMax: double.IsNaN(FixedMax) ? null : FixedMax);
 
         dc.DrawLine(ThresholdPen, new Point(0, layout.ThresholdY), new Point(w, layout.ThresholdY));
         foreach (var x in layout.LossBarsX)
-            dc.DrawRectangle(LossBrush, null, new Rect(Math.Max(0, x - 1.5), 0, 3, h));
+            dc.DrawRectangle(LossBrush, null, new Rect(Math.Clamp(x - 1.5, 0, Math.Max(0, w - 3)), 0, 3, h));
         foreach (var s in layout.Segments)
             dc.DrawLine(s.AboveThreshold ? RedPen : GreenPen, new Point(s.X1, s.Y1), new Point(s.X2, s.Y2));
     }
