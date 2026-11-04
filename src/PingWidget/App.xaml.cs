@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using PingWidget.Core;
+using PingWidget.Settings;
 using PingWidget.Tray;
 using PingWidget.Widget;
 
@@ -13,6 +14,7 @@ public partial class App : Application
     private PingMonitor? _monitor;
     private WidgetWindow? _widget;
     private TrayIconController? _tray;
+    private SettingsWindow? _settingsWindow;
 
     protected override void OnStartup(StartupEventArgs e)
     {
@@ -87,7 +89,27 @@ public partial class App : Application
 
     private void OpenSettings()
     {
-        // Implemented in Task 8.
+        if (_settingsWindow is not null)
+        {
+            _settingsWindow.Activate();
+            return;
+        }
+
+        _settingsWindow = new SettingsWindow(_settings.Hosts);
+        try
+        {
+            if (_settingsWindow.ShowDialog() == true && _settingsWindow.Result is { } hosts)
+            {
+                _settings.Hosts = hosts.ToList();
+                SaveSettings();
+                _monitor!.SetHosts(hosts);
+                _widget?.RefreshRows();
+            }
+        }
+        finally
+        {
+            _settingsWindow = null;
+        }
     }
 
     private void OnMonitorUpdated(object? sender, EventArgs e)
