@@ -1,0 +1,37 @@
+<Window x:Class="PingWidget.Widget.WidgetWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:w="clr-namespace:PingWidget.Widget"
+        Title="PingWidget"
+        Width="300" SizeToContent="Height"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" Topmost="True" ShowInTaskbar="False" ShowActivated="False"
+        FontFamily="Segoe UI" FontSize="12">
+    <Border CornerRadius="8" Background="#1b1d22" Padding="8,4,8,8"
+            MouseLeftButtonDown="OnMouseLeftButtonDown">
+        <ItemsControl x:Name="Rows">
+            <ItemsControl.ItemTemplate>
+                <DataTemplate DataType="{x:Type w:HostRowViewModel}">
+                    <StackPanel Margin="0,4,0,0">
+                        <DockPanel Margin="0,0,0,2">
+                            <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentText}">
+                                <TextBlock.Style>
+                                    <Style TargetType="TextBlock">
+                                        <Setter Property="Foreground" Value="#4cd97b" />
+                                        <Style.Triggers>
+                                            <DataTrigger Binding="{Binding IsAboveThreshold}" Value="True">
+                                                <Setter Property="Foreground" Value="#ff4d4d" />
+                                            </DataTrigger>
+                                        </Style.Triggers>
+                                    </Style>
+                                </TextBlock.Style>
+                            </TextBlock>
+                            <TextBlock Text="{Binding Address}" Foreground="#dddddd" TextTrimming="CharacterEllipsis" />
+                        </DockPanel>
+                        <w:HeartbeatChart Height="34" Samples="{Binding Samples}" ThresholdMs="{Binding ThresholdMs}" />
+                    </StackPanel>
+                </DataTemplate>
+            </ItemsControl.ItemTemplate>
+        </ItemsControl>
+    </Border>
+</Window>
