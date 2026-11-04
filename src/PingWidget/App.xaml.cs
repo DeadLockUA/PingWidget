@@ -116,15 +116,17 @@ public partial class App : Application
             return;
         }
 
-        _settingsWindow = new SettingsWindow(_settings.Hosts);
+        _settingsWindow = new SettingsWindow(_settings.Hosts, _settings.MetricThresholds);
         try
         {
             if (_settingsWindow.ShowDialog() == true && _settingsWindow.Result is { } hosts)
             {
                 _settings.Hosts = hosts.ToList();
+                if (_settingsWindow.ResultThresholds is { } thresholds) _settings.MetricThresholds = thresholds;
                 SaveSettings();
                 _monitor!.SetHosts(hosts);
                 _widget?.RefreshRows();
+                _widget?.RebuildMetricRows();
             }
         }
         finally
