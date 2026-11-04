@@ -3,35 +3,68 @@
         xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
         xmlns:w="clr-namespace:PingWidget.Widget"
         Title="PingWidget"
-        Width="300" SizeToContent="Height"
+        SizeToContent="WidthAndHeight"
         WindowStyle="None" AllowsTransparency="True" Background="Transparent"
         ResizeMode="NoResize" Topmost="True" ShowInTaskbar="False" ShowActivated="False"
         FontFamily="Segoe UI" FontSize="12">
+    <Window.Resources>
+        <Style x:Key="ValueText" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#4cd97b" />
+            <Style.Triggers>
+                <DataTrigger Binding="{Binding IsAboveThreshold}" Value="True">
+                    <Setter Property="Foreground" Value="#ff4d4d" />
+                </DataTrigger>
+            </Style.Triggers>
+        </Style>
+
+        <Style x:Key="SectionCaption" TargetType="TextBlock">
+            <Setter Property="Foreground" Value="#888888" />
+            <Setter Property="FontSize" Value="11" />
+            <Setter Property="Margin" Value="0,4,0,0" />
+        </Style>
+
+        <DataTemplate x:Key="MetricRow" DataType="{x:Type w:MetricRowViewModel}">
+            <DockPanel Height="16" Margin="0,2,0,2" LastChildFill="True">
+                <TextBlock DockPanel.Dock="Left" Width="44" Foreground="#aaaaaa" Text="{Binding Label}"
+                           VerticalAlignment="Center" />
+                <TextBlock DockPanel.Dock="Left" Width="100" Margin="0,0,6,0" TextAlignment="Right"
+                           VerticalAlignment="Center" Text="{Binding CurrentText}" Style="{StaticResource ValueText}" />
+                <w:HeartbeatChart Values="{Binding Values}" Threshold="{Binding Threshold}" FixedMax="100" MarkMissing="False" />
+            </DockPanel>
+        </DataTemplate>
+    </Window.Resources>
+
     <Border CornerRadius="8" Background="#1b1d22" Padding="8,4,8,8"
             MouseLeftButtonDown="OnMouseLeftButtonDown">
-        <ItemsControl x:Name="Rows">
-            <ItemsControl.ItemTemplate>
-                <DataTemplate DataType="{x:Type w:HostRowViewModel}">
-                    <StackPanel Margin="0,4,0,0">
-                        <DockPanel Margin="0,0,0,2">
-                            <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentText}">
-                                <TextBlock.Style>
-                                    <Style TargetType="TextBlock">
-                                        <Setter Property="Foreground" Value="#4cd97b" />
-                                        <Style.Triggers>
-                                            <DataTrigger Binding="{Binding IsAboveThreshold}" Value="True">
-                                                <Setter Property="Foreground" Value="#ff4d4d" />
-                                            </DataTrigger>
-                                        </Style.Triggers>
-                                    </Style>
-                                </TextBlock.Style>
-                            </TextBlock>
-                            <TextBlock Text="{Binding Address}" Foreground="#dddddd" TextTrimming="CharacterEllipsis" />
-                        </DockPanel>
-                        <w:HeartbeatChart Height="34" Values="{Binding Values}" Threshold="{Binding ThresholdMs}" />
-                    </StackPanel>
-                </DataTemplate>
-            </ItemsControl.ItemTemplate>
-        </ItemsControl>
+        <Grid>
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="280" />
+                <ColumnDefinition Width="12" />
+                <ColumnDefinition Width="270" />
+            </Grid.ColumnDefinitions>
+
+            <ItemsControl x:Name="Rows" Grid.Column="0">
+                <ItemsControl.ItemTemplate>
+                    <DataTemplate DataType="{x:Type w:HostRowViewModel}">
+                        <StackPanel Margin="0,4,0,0">
+                            <DockPanel Margin="0,0,0,2">
+                                <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentText}" Style="{StaticResource ValueText}" />
+                                <TextBlock Text="{Binding Address}" Foreground="#dddddd" TextTrimming="CharacterEllipsis" />
+                            </DockPanel>
+                            <w:HeartbeatChart Height="34" Values="{Binding Values}" Threshold="{Binding ThresholdMs}" />
+                        </StackPanel>
+                    </DataTemplate>
+                </ItemsControl.ItemTemplate>
+            </ItemsControl>
+
+            <StackPanel Grid.Column="2">
+                <TextBlock Text="CPU" Style="{StaticResource SectionCaption}" />
+                <ItemsControl x:Name="CpuRows" ItemTemplate="{StaticResource MetricRow}" />
+                <TextBlock Text="RAM" Style="{StaticResource SectionCaption}" />
+                <ItemsControl x:Name="RamRows" ItemTemplate="{StaticResource MetricRow}" />
+                <TextBlock Text="GPU" Style="{StaticResource SectionCaption}" />
+                <ItemsControl x:Name="GpuRows" ItemTemplate="{StaticResource MetricRow}" />
+            </StackPanel>
+        </Grid>
     </Border>
 </Window>

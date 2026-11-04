@@ -20,6 +20,17 @@ public sealed class HeartbeatChart : FrameworkElement
         nameof(FixedMax), typeof(double), typeof(HeartbeatChart),
         new FrameworkPropertyMetadata(double.NaN, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    /// <summary>Draw missing values as red loss bars (ping) or leave them empty (hardware sensors).</summary>
+    public static readonly DependencyProperty MarkMissingProperty = DependencyProperty.Register(
+        nameof(MarkMissing), typeof(bool), typeof(HeartbeatChart),
+        new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public bool MarkMissing
+    {
+        get => (bool)GetValue(MarkMissingProperty);
+        set => SetValue(MarkMissingProperty, value);
+    }
+
     public IReadOnlyList<double?> Values
     {
         get => (IReadOnlyList<double?>)GetValue(ValuesProperty);
@@ -60,7 +71,7 @@ public sealed class HeartbeatChart : FrameworkElement
 
         dc.DrawRectangle(ChartBackground, null, new Rect(0, 0, w, h));
         var layout = ChartGeometry.Compute(Values ?? Array.Empty<double?>(), Threshold, w, h,
-            fixedMax: double.IsNaN(FixedMax) ? null : FixedMax);
+            fixedMax: double.IsNaN(FixedMax) ? null : FixedMax, markMissing: MarkMissing);
 
         dc.DrawLine(ThresholdPen, new Point(0, layout.ThresholdY), new Point(w, layout.ThresholdY));
         foreach (var x in layout.LossBarsX)

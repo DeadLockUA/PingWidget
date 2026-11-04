@@ -15,11 +15,12 @@ public static class ChartGeometry
     }
 
     /// <summary>
-    /// Null values are gaps drawn as loss bars. With <paramref name="fixedMax"/> the scale is fixed (values above it
+    /// Null values are gaps; with <paramref name="markMissing"/> they are also drawn as loss bars (ping), otherwise
+    /// left empty (a hardware sensor that is simply unavailable). With <paramref name="fixedMax"/> the scale is fixed (values above it
     /// are clamped to the top); otherwise it is max(threshold * 2.5, largest value).
     /// </summary>
     public static ChartLayout Compute(IReadOnlyList<double?> values, double threshold, double width, double height,
-        int capacity = 120, double? fixedMax = null)
+        int capacity = 120, double? fixedMax = null, bool markMissing = true)
     {
         var first = Math.Max(0, values.Count - capacity);
         var count = values.Count - first;
@@ -44,7 +45,7 @@ public static class ChartGeometry
         {
             if (values[i] is not double cur)
             {
-                lossBars.Add(X(i));
+                if (markMissing) lossBars.Add(X(i));
                 continue;
             }
             if (i > first && values[i - 1] is double prev)

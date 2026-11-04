@@ -86,4 +86,12 @@ public class ChartGeometryTests
         var l = ChartGeometry.Compute(new double?[] { 1, null, 1 }, 90, W, H, capacity: 120);
         Assert.Equal(new[] { 118.0 }, l.LossBarsX);
     }
+
+    [Fact]
+    public void Values_MarkMissingFalse_NoLossBarsAndNoSegments()
+    {
+        var l = ChartGeometry.Compute(new double?[] { 1, null, 1 }, 90, W, H, capacity: 120, fixedMax: 100, markMissing: false);
+        Assert.Empty(l.LossBarsX);
+        Assert.Empty(l.Segments);
+    }
 }
