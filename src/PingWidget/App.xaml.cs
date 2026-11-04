@@ -20,6 +20,22 @@ public partial class App : Application
     {
         base.OnStartup(e);
 
+        // A tray app has no window to show errors in: log them and keep running where possible.
+        DispatcherUnhandledException += (_, args) =>
+        {
+            CrashLog.Write(args.Exception, CrashLog.DefaultPath, DateTime.Now);
+            args.Handled = true;
+        };
+        AppDomain.CurrentDomain.UnhandledException += (_, args) =>
+        {
+            if (args.ExceptionObject is Exception ex) CrashLog.Write(ex, CrashLog.DefaultPath, DateTime.Now);
+        };
+        TaskScheduler.UnobservedTaskException += (_, args) =>
+        {
+            CrashLog.Write(args.Exception, CrashLog.DefaultPath, DateTime.Now);
+            args.SetObserved();
+        };
+
         _singleInstance = new Mutex(true, "PingWidget.SingleInstance", out var isFirst);
         if (!isFirst)
         {
