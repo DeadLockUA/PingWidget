@@ -3,7 +3,7 @@ namespace PingWidget.Core.Metrics;
 /// <summary>Maps raw sensors (LibreHardwareMonitor naming) to the six metrics shown on the card.</summary>
 public static class SensorPicker
 {
-    private static readonly string[] CpuTempNames = ["Core (Tctl/Tdie)", "Core (Tctl)", "CPU Package"];
+    private static readonly string[] CpuTempNames = ["Core (Tctl/Tdie)", "Core (Tdie)", "Core (Tctl)", "CPU Package"];
 
     public static IReadOnlyDictionary<MetricKind, MetricReading> Pick(IReadOnlyList<SensorReading> sensors)
     {
@@ -28,9 +28,13 @@ public static class SensorPicker
                     : new(percent);
         }
 
+        // The discrete card is the one with the most dedicated memory (an AMD iGPU can be listed before an NVIDIA dGPU);
+        // Intel breaks ties last.
         var gpuHw = sensors.Where(s => s.HardwareType is "GpuNvidia" or "GpuAmd" or "GpuIntel")
             .Select(s => (s.HardwareType, s.HardwareName)).Distinct()
-            .OrderBy(h => h.HardwareType == "GpuIntel" ? 1 : 0).FirstOrDefault();
+            .OrderByDescending(h => DedicatedMemoryMb(sensors, h.HardwareType, h.HardwareName))
+            .ThenBy(h => h.HardwareType == "GpuIntel" ? 1 : 0)
+            .FirstOrDefault();
         if (gpuHw.HardwareType is not null)
         {
             var gpu = sensors.Where(s => s.HardwareType == gpuHw.HardwareType && s.HardwareName == gpuHw.HardwareName).ToList();
@@ -43,6 +47,12 @@ public static class SensorPicker
         }
 
         return result;
+    }
+
+    private static double DedicatedMemoryMb(IReadOnlyList<SensorReading> sensors, string type, string name)
+    {
+        var gpu = sensors.Where(s => s.HardwareType == type && s.HardwareName == name).ToList();
+        return Valid(Find(gpu, "SmallData", "GPU Memory Total")) ?? Valid(Find(gpu, "SmallData", "D3D Dedicated Memory Total")) ?? 0;
     }
 
     private static MetricReading? Vram(double? usedMb, double? totalMb) =>

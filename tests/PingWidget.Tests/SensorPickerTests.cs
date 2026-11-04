@@ -116,4 +116,32 @@ public class SensorPickerTests
         var list = UserMachine().Select(s => s.Name is "GPU Memory Total" or "D3D Dedicated Memory Total" ? s with { Value = 0 } : s).ToList();
         Assert.Null(SensorPicker.Pick(list)[MetricKind.VramUsed].Value);
     }
+
+    [Fact]
+    public void DiscreteByDedicatedMemory_WinsOverIntegratedListedFirst()
+    {
+        List<SensorReading> list =
+        [
+            S("GpuAmd", "AMD Radeon(TM) Graphics", "Load", "GPU Core", 3f),
+            S("GpuAmd", "AMD Radeon(TM) Graphics", "SmallData", "GPU Memory Total", 512f),
+            S("GpuAmd", "AMD Radeon(TM) Graphics", "SmallData", "GPU Memory Used", 400f),
+            S("GpuNvidia", "NVIDIA GeForce RTX 4070", "Load", "GPU Core", 42f),
+            S("GpuNvidia", "NVIDIA GeForce RTX 4070", "SmallData", "D3D Dedicated Memory Total", 8192f),
+            S("GpuNvidia", "NVIDIA GeForce RTX 4070", "SmallData", "D3D Dedicated Memory Used", 1024f),
+        ];
+        var m = SensorPicker.Pick(list);
+        Assert.Equal(42, m[MetricKind.GpuLoad].Value);
+        Assert.Equal(8, m[MetricKind.VramUsed].TotalGb!.Value, 3);
+    }
+
+    [Fact]
+    public void TdiePreferredOverTctl()
+    {
+        var m = SensorPicker.Pick(
+        [
+            S("Cpu", "AMD Ryzen 7 2700X", "Temperature", "Core (Tctl)", 70f),
+            S("Cpu", "AMD Ryzen 7 2700X", "Temperature", "Core (Tdie)", 60f),
+        ]);
+        Assert.Equal(60, m[MetricKind.CpuTemp].Value);
+    }
 }
