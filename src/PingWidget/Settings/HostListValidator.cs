@@ -4,8 +4,8 @@ namespace PingWidget.Settings;
 
 public static class HostListValidator
 {
-    public const int MinThreshold = 1;
-    public const int MaxThreshold = 10000;
+    public const int MinThreshold = HostConfig.MinThreshold;
+    public const int MaxThreshold = HostConfig.MaxThreshold;
 
     /// <summary>Returns user-facing error messages; an empty list means the hosts are valid.</summary>
     public static IReadOnlyList<string> Validate(IReadOnlyList<HostConfig> hosts)

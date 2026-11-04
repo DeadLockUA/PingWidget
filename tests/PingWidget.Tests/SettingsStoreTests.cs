@@ -53,6 +53,46 @@ public class SettingsStoreTests : IDisposable
         AssertDefaults(SettingsStore.Load(FilePath));
     }
 
+    private AppSettings LoadJson(string json)
+    {
+        Directory.CreateDirectory(_dir);
+        File.WriteAllText(FilePath, json);
+        return SettingsStore.Load(FilePath);
+    }
+
+    [Fact]
+    public void Load_NullHostEntry_Dropped() =>
+        Assert.Equal([new HostConfig("1.1.1.1", 5)],
+            LoadJson("""{"Hosts":[null,{"Address":"1.1.1.1","ThresholdMs":5}]}""").Hosts);
+
+    [Fact]
+    public void Load_LowercaseKeys_Accepted() =>
+        Assert.Equal([new HostConfig("1.1.1.1", 5)],
+            LoadJson("""{"hosts":[{"address":"1.1.1.1","thresholdMs":5}]}""").Hosts);
+
+    [Fact]
+    public void Load_MissingOrBlankAddress_Dropped() =>
+        Assert.Equal([new HostConfig("8.8.8.8", 100)],
+            LoadJson("""{"Hosts":[{"ThresholdMs":5},{"Address":"  ","ThresholdMs":5},{"Address":"8.8.8.8","ThresholdMs":100}]}""").Hosts);
+
+    [Fact]
+    public void Load_ThresholdClampedToValidRange() =>
+        Assert.Equal([new HostConfig("a", 1), new HostConfig("b", 10000)],
+            LoadJson("""{"Hosts":[{"Address":"a","ThresholdMs":0},{"Address":"b","ThresholdMs":99999}]}""").Hosts);
+
+    [Fact]
+    public void Load_DuplicateAddresses_KeepFirst() =>
+        Assert.Equal([new HostConfig("a", 5)],
+            LoadJson("""{"Hosts":[{"Address":"a","ThresholdMs":5},{"Address":" A ","ThresholdMs":7}]}""").Hosts);
+
+    [Fact]
+    public void Load_EmptyHostList_UsesDefaultHosts() =>
+        Assert.Equal(AppSettings.DefaultHosts(), LoadJson("""{"Hosts":[],"ShowOnDesktop":false}""").Hosts);
+
+    [Fact]
+    public void Load_HostsNotAnArray_ReturnsDefaults() =>
+        AssertDefaults(LoadJson("""{"Hosts":"oops"}"""));
+
     [Fact]
     public void SaveThenLoad_RoundTrips()
     {
