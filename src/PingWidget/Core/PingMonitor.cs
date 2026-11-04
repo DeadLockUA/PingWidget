@@ -69,7 +69,30 @@ public sealed class PingMonitor : IDisposable
         Updated?.Invoke(this, EventArgs.Empty);
     }
 
+    /// <summary>Extra time allowed beyond the ICMP timeout (covers DNS resolution) before a ping counts as lost.</summary>
+    private const int HardLimitSlackMs = 500;
+
+    private readonly Dictionary<string, Task<long?>> _inFlight = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>
+    /// Pings one host with a hard time limit, so a hanging lookup can't stall the other hosts.
+    /// While a previous ping for the host is still running, no new one is started and the sample counts as lost.
+    /// </summary>
     private async Task<long?> SafePing(string address)
+    {
+        Task<long?> ping;
+        lock (_inFlight)
+        {
+            if (_inFlight.TryGetValue(address, out var previous) && !previous.IsCompleted) return null;
+            ping = GuardedPing(address);
+            _inFlight[address] = ping;
+        }
+
+        var finished = await Task.WhenAny(ping, Task.Delay(TimeoutMs + HardLimitSlackMs)).ConfigureAwait(false);
+        return finished == ping ? await ping.ConfigureAwait(false) : null;
+    }
+
+    private async Task<long?> GuardedPing(string address)
     {
         try { return await _pinger.PingAsync(address, TimeoutMs).ConfigureAwait(false); }
         catch (Exception) { return null; }

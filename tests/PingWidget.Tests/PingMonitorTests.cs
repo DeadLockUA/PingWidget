@@ -140,6 +140,44 @@ public class PingMonitorTests
     }
 
     [Fact]
+    public async Task HangingHost_TickStillFinishesWithinTimeout()
+    {
+        var never = new TaskCompletionSource<long?>();
+        var p = new FakePinger { Respond = a => a == A.Address ? never.Task : Task.FromResult<long?>(3) };
+        using var m = Create(p);
+        m.SetHosts([A, B]);
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        await m.TickAsync();
+        Assert.True(sw.ElapsedMilliseconds < PingMonitor.TimeoutMs + 800, $"tick took {sw.ElapsedMilliseconds} ms");
+        Assert.True(m.HistoryFor(A.Address).Snapshot().Single().IsLost);
+        Assert.Equal(3, m.HistoryFor(B.Address).Snapshot().Single().RoundtripMs);
+    }
+
+    [Fact]
+    public async Task HangingHost_NotPingedAgainWhileStillInFlight()
+    {
+        var never = new TaskCompletionSource<long?>();
+        var callsA = 0;
+        var p = new FakePinger
+        {
+            Respond = a =>
+            {
+                if (a != A.Address) return Task.FromResult<long?>(3);
+                Interlocked.Increment(ref callsA);
+                return never.Task;
+            },
+        };
+        using var m = Create(p);
+        m.SetHosts([A, B]);
+        await m.TickAsync();
+        await m.TickAsync();
+        Assert.Equal(1, callsA);
+        Assert.Equal(2, m.HistoryFor(A.Address).Count);
+        Assert.All(m.HistoryFor(A.Address).Snapshot(), s => Assert.True(s.IsLost));
+        Assert.Equal(2, m.HistoryFor(B.Address).Count);
+    }
+
+    [Fact]
     public async Task Start_TicksRepeatedly()
     {
         using var m = Create(new FakePinger());
