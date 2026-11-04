@@ -1,0 +1,36 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{C330EF56-D650-4E2D-BB2A-9D3C2668F518}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingWidget", "src\PingWidget\PingWidget.csproj", "{59339845-8689-4C09-8B53-886EE1304028}"
+EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "tests", "tests", "{3255BE43-434B-4F4F-98AF-A381F1A63904}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PingWidget.Tests", "tests\PingWidget.Tests\PingWidget.Tests.csproj", "{1ABF765E-00F3-49F1-A3CA-38D3568ECEE4}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{59339845-8689-4C09-8B53-886EE1304028}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{59339845-8689-4C09-8B53-886EE1304028}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{59339845-8689-4C09-8B53-886EE1304028}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{59339845-8689-4C09-8B53-886EE1304028}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1ABF765E-00F3-49F1-A3CA-38D3568ECEE4}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1ABF765E-00F3-49F1-A3CA-38D3568ECEE4}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1ABF765E-00F3-49F1-A3CA-38D3568ECEE4}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1ABF765E-00F3-49F1-A3CA-38D3568ECEE4}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{59339845-8689-4C09-8B53-886EE1304028} = {C330EF56-D650-4E2D-BB2A-9D3C2668F518}
+		{1ABF765E-00F3-49F1-A3CA-38D3568ECEE4} = {3255BE43-434B-4F4F-98AF-A381F1A63904}
+	EndGlobalSection
+EndGlobal
