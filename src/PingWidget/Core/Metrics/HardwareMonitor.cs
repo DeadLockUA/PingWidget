@@ -17,7 +17,18 @@ public sealed class HardwareMonitor : IDisposable
     private CancellationTokenSource? _cts;
     private bool _disposed;
 
-    public HardwareMonitor(Func<IHardwareSource> sourceFactory) => _sourceFactory = sourceFactory;
+    /// <summary>A read slower than this counts as "no data"; it is not restarted while still running.</summary>
+    public static readonly TimeSpan DefaultReadTimeout = TimeSpan.FromSeconds(2);
+
+    private readonly TimeSpan _readTimeout;
+    private readonly object _pendingLock = new();
+    private Task<IReadOnlyDictionary<MetricKind, MetricReading>?>? _pendingRead;
+
+    public HardwareMonitor(Func<IHardwareSource> sourceFactory, TimeSpan? readTimeout = null)
+    {
+        _sourceFactory = sourceFactory;
+        _readTimeout = readTimeout ?? DefaultReadTimeout;
+    }
 
     public event EventHandler? Updated;
 
@@ -25,12 +36,24 @@ public sealed class HardwareMonitor : IDisposable
 
     public async Task TickAsync()
     {
-        IReadOnlyDictionary<MetricKind, MetricReading>? picked;
-        try { picked = await Task.Run(ReadOnce).ConfigureAwait(false); }
+        Task<IReadOnlyDictionary<MetricKind, MetricReading>?> read;
+        lock (_pendingLock)
+        {
+            // A read still hanging from an earlier tick is awaited again, never duplicated.
+            if (_pendingRead is not { IsCompleted: false }) _pendingRead = Task.Run(ReadOnce);
+            read = _pendingRead;
+        }
+
+        IReadOnlyDictionary<MetricKind, MetricReading>? picked = null;
+        try
+        {
+            var finished = await Task.WhenAny(read, Task.Delay(_readTimeout)).ConfigureAwait(false);
+            if (finished == read) picked = await read.ConfigureAwait(false);
+            else Debug.WriteLine("Hardware read timed out");
+        }
         catch (Exception e)
         {
             Debug.WriteLine($"HardwareMonitor tick failed: {e}");
-            picked = null;
         }
 
         foreach (var (kind, history) in _histories)

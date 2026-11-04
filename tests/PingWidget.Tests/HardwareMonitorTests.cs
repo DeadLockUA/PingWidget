@@ -7,8 +7,11 @@ internal sealed class FakeHardwareSource : IHardwareSource
     private int _inFlight;
     public int PeakInFlight;
     public int Disposed;
-    public Func<IReadOnlyList<SensorReading>> Read { get; set; } =
-        () => [new SensorReading("Cpu", "cpu", "Load", "CPU Total", 46.27f)];
+    public IReadOnlyList<SensorReading> DefaultSensors() => [new SensorReading("Cpu", "cpu", "Load", "CPU Total", 46.27f)];
+
+    public Func<IReadOnlyList<SensorReading>> Read { get; set; }
+
+    public FakeHardwareSource() => Read = DefaultSensors;
 
     public IReadOnlyList<SensorReading> ReadSensors()
     {
@@ -88,6 +91,26 @@ public class HardwareMonitorTests
         await Task.Delay(300);
         m.Stop();
         Assert.Equal(1, src.PeakInFlight);
+    }
+
+    [Fact]
+    public async Task HungRead_TimesOutToMissing_AndIsNotRestarted()
+    {
+        using var gate = new ManualResetEventSlim(false);
+        var calls = 0;
+        var src = new FakeHardwareSource();
+        src.Read = () => { Interlocked.Increment(ref calls); gate.Wait(); return src.DefaultSensors(); };
+        using var m = new HardwareMonitor(() => src, readTimeout: TimeSpan.FromMilliseconds(200));
+        var sw = System.Diagnostics.Stopwatch.StartNew();
+        await m.TickAsync();
+        await m.TickAsync();
+        Assert.True(sw.ElapsedMilliseconds < 2000, $"took {sw.ElapsedMilliseconds} ms");
+        Assert.Equal(1, calls);
+        Assert.All(m.HistoryFor(MetricKind.CpuLoad).Snapshot(), r => Assert.Null(r.Value));
+        gate.Set();
+        await Task.Delay(100);
+        await m.TickAsync();
+        Assert.NotNull(m.HistoryFor(MetricKind.CpuLoad).Snapshot()[^1].Value);
     }
 
     [Fact]
