@@ -1,6 +1,7 @@
 using System.IO;
 using System.Windows;
 using PingWidget.Core;
+using PingWidget.Core.Metrics;
 using PingWidget.Settings;
 using PingWidget.Tray;
 using PingWidget.Widget;
@@ -12,6 +13,7 @@ public partial class App : Application
     private Mutex? _singleInstance;
     private AppSettings _settings = AppSettings.Defaults();
     private PingMonitor? _monitor;
+    private HardwareMonitor? _hardware;
     private WidgetWindow? _widget;
     private TrayIconController? _tray;
     private SettingsWindow? _settingsWindow;
@@ -53,7 +55,9 @@ public partial class App : Application
         _monitor.SetHosts(_settings.Hosts);
         _monitor.Updated += OnMonitorUpdated;
 
-        _widget = new WidgetWindow(_monitor, _settings, SaveSettings);
+        _hardware = new HardwareMonitor(() => new LhmHardwareSource());
+
+        _widget = new WidgetWindow(_monitor, _hardware, _settings, SaveSettings);
 
         _tray = new TrayIconController
         {
@@ -67,6 +71,7 @@ public partial class App : Application
 
         ApplyShowOnDesktop(_settings.ShowOnDesktop, save: false);
         _monitor.Start(TimeSpan.FromSeconds(1));
+        _hardware.Start(TimeSpan.FromSeconds(1));
     }
 
     private void ApplyShowOnDesktop(bool show, bool save)
@@ -111,15 +116,17 @@ public partial class App : Application
             return;
         }
 
-        _settingsWindow = new SettingsWindow(_settings.Hosts);
+        _settingsWindow = new SettingsWindow(_settings.Hosts, _settings.MetricThresholds);
         try
         {
             if (_settingsWindow.ShowDialog() == true && _settingsWindow.Result is { } hosts)
             {
                 _settings.Hosts = hosts.ToList();
+                if (_settingsWindow.ResultThresholds is { } thresholds) _settings.MetricThresholds = thresholds;
                 SaveSettings();
                 _monitor!.SetHosts(hosts);
                 _widget?.RefreshRows();
+                _widget?.RebuildMetricRows();
             }
         }
         finally
@@ -153,6 +160,7 @@ public partial class App : Application
             _monitor.Dispose();
             SaveSettings();
         }
+        _hardware?.Dispose();
         _tray?.Dispose();
         _singleInstance?.ReleaseMutex();
         _singleInstance?.Dispose();

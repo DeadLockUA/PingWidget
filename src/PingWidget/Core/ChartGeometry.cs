@@ -9,31 +9,49 @@ public static class ChartGeometry
 {
     public static ChartLayout Compute(IReadOnlyList<PingSample> samples, int thresholdMs, double width, double height, int capacity = 120)
     {
-        var first = Math.Max(0, samples.Count - capacity);
-        var count = samples.Count - first;
+        var values = new double?[samples.Count];
+        for (var i = 0; i < samples.Count; i++) values[i] = samples[i].RoundtripMs;
+        return Compute(values, thresholdMs, width, height, capacity);
+    }
+
+    /// <summary>
+    /// Null values are gaps; with <paramref name="markMissing"/> they are also drawn as loss bars (ping), otherwise
+    /// left empty (a hardware sensor that is simply unavailable). With <paramref name="fixedMax"/> the scale is fixed (values above it
+    /// are clamped to the top); otherwise it is max(threshold * 2.5, largest value).
+    /// </summary>
+    public static ChartLayout Compute(IReadOnlyList<double?> values, double threshold, double width, double height,
+        int capacity = 120, double? fixedMax = null, bool markMissing = true)
+    {
+        var first = Math.Max(0, values.Count - capacity);
+        var count = values.Count - first;
         var step = width / (capacity - 1);
 
-        double max = thresholdMs * 2.5;
-        for (var i = first; i < samples.Count; i++)
-            if (samples[i].RoundtripMs is long r && r > max) max = r;
+        double max;
+        if (fixedMax is double fm) max = fm;
+        else
+        {
+            max = threshold * 2.5;
+            for (var i = first; i < values.Count; i++)
+                if (values[i] is double v && v > max) max = v;
+        }
         if (max <= 0) max = 1;
 
-        double Y(double v) => height - 2 - (Math.Min(v, max) / max) * (height - 4);
+        double Y(double v) => height - 2 - (Math.Clamp(v, 0, max) / max) * (height - 4);
         double X(int i) => width - (count - 1 - (i - first)) * step;
 
         var segments = new List<ChartSegment>();
         var lossBars = new List<double>();
-        for (var i = first; i < samples.Count; i++)
+        for (var i = first; i < values.Count; i++)
         {
-            if (samples[i].RoundtripMs is not long cur)
+            if (values[i] is not double cur)
             {
-                lossBars.Add(X(i));
+                if (markMissing) lossBars.Add(X(i));
                 continue;
             }
-            if (i > first && samples[i - 1].RoundtripMs is long prev)
-                segments.Add(new ChartSegment(X(i - 1), Y(prev), X(i), Y(cur), Math.Max(prev, cur) > thresholdMs));
+            if (i > first && values[i - 1] is double prev)
+                segments.Add(new ChartSegment(X(i - 1), Y(prev), X(i), Y(cur), Math.Max(prev, cur) > threshold));
         }
 
-        return new ChartLayout(segments, lossBars, Y(thresholdMs));
+        return new ChartLayout(segments, lossBars, Y(threshold));
     }
 }

@@ -1,3 +1,5 @@
+using PingWidget.Core.Metrics;
+
 namespace PingWidget.Core;
 
 public sealed class AppSettings
@@ -7,6 +9,7 @@ public sealed class AppSettings
     public bool StartWithWindows { get; set; }
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
+    public MetricThresholds MetricThresholds { get; set; } = new();
 
     public static AppSettings Defaults() => new();
 

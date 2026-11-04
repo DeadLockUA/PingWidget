@@ -5,33 +5,70 @@ using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Media;
 using PingWidget.Core;
+using PingWidget.Core.Metrics;
 
 namespace PingWidget.Widget;
 
 public partial class WidgetWindow : Window
 {
     private readonly PingMonitor _monitor;
+    private readonly HardwareMonitor _hardware;
     private readonly AppSettings _settings;
     private readonly Action _saveSettings;
     private readonly ObservableCollection<HostRowViewModel> _rows = [];
     private IReadOnlyList<HostConfig>? _shownHosts;
+    private readonly ObservableCollection<MetricRowViewModel> _cpuRows = [];
+    private readonly ObservableCollection<MetricRowViewModel> _ramRows = [];
+    private readonly ObservableCollection<MetricRowViewModel> _gpuRows = [];
 
-    public WidgetWindow(PingMonitor monitor, AppSettings settings, Action saveSettings)
+    public WidgetWindow(PingMonitor monitor, HardwareMonitor hardware, AppSettings settings, Action saveSettings)
     {
         InitializeComponent();
         _monitor = monitor;
+        _hardware = hardware;
         _settings = settings;
         _saveSettings = saveSettings;
         Rows.ItemsSource = _rows;
+        CpuRows.ItemsSource = _cpuRows;
+        RamRows.ItemsSource = _ramRows;
+        GpuRows.ItemsSource = _gpuRows;
 
         RefreshRows();
+        RebuildMetricRows();
         _monitor.Updated += OnMonitorUpdated;
+        _hardware.Updated += OnHardwareUpdated;
         Loaded += (_, _) => PlaceOnScreen(_settings.WindowLeft, _settings.WindowTop);
         // Card grows when hosts are added: keep it fully on its screen.
         SizeChanged += (_, _) => { if (IsLoaded) PlaceOnScreen(Left, Top, snapToNearest: true); };
     }
 
     private void OnMonitorUpdated(object? sender, EventArgs e) => Dispatcher.BeginInvoke(RefreshRows);
+
+    private void OnHardwareUpdated(object? sender, EventArgs e) => Dispatcher.BeginInvoke(RefreshMetricRows);
+
+    /// <summary>Recreates the hardware rows with the current thresholds from settings.</summary>
+    public void RebuildMetricRows()
+    {
+        var t = _settings.MetricThresholds;
+        MetricRowViewModel Row(MetricKind k, string label) => new(k, label, t.Of(k));
+
+        _cpuRows.Clear();
+        _cpuRows.Add(Row(MetricKind.CpuLoad, "Load"));
+        _cpuRows.Add(Row(MetricKind.CpuTemp, "Temp"));
+        _ramRows.Clear();
+        _ramRows.Add(Row(MetricKind.RamUsed, "Used"));
+        _gpuRows.Clear();
+        _gpuRows.Add(Row(MetricKind.GpuLoad, "Load"));
+        _gpuRows.Add(Row(MetricKind.VramUsed, "VRAM"));
+        _gpuRows.Add(Row(MetricKind.GpuTemp, "Temp"));
+        RefreshMetricRows();
+    }
+
+    private void RefreshMetricRows()
+    {
+        foreach (var row in _cpuRows.Concat(_ramRows).Concat(_gpuRows))
+            row.Readings = _hardware.HistoryFor(row.Kind).Snapshot();
+    }
 
     /// <summary>Rebuilds rows if the host list changed, then pulls the latest samples.</summary>
     public void RefreshRows()
@@ -62,6 +99,7 @@ public partial class WidgetWindow : Window
     protected override void OnClosed(EventArgs e)
     {
         _monitor.Updated -= OnMonitorUpdated;
+        _hardware.Updated -= OnHardwareUpdated;
         base.OnClosed(e);
     }
 

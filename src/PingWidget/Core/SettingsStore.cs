@@ -1,5 +1,6 @@
 using System.IO;
 using System.Text.Json;
+using PingWidget.Core.Metrics;
 
 namespace PingWidget.Core;
 
@@ -18,6 +19,7 @@ public static class SettingsStore
             var settings = JsonSerializer.Deserialize<AppSettings>(File.ReadAllText(path), Options);
             if (settings is null) return AppSettings.Defaults();
             settings.Hosts = Sanitize(settings.Hosts);
+            settings.MetricThresholds = (settings.MetricThresholds ?? new MetricThresholds()).Sanitized();
             return settings;
         }
         catch (Exception e) when (e is IOException or JsonException or UnauthorizedAccessException or NotSupportedException)

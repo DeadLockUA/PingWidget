@@ -1,4 +1,5 @@
 using PingWidget.Core;
+using PingWidget.Core.Metrics;
 
 namespace PingWidget.Settings;
 
@@ -31,6 +32,18 @@ public static class HostListValidator
             if (h.ThresholdMs is < MinThreshold or > MaxThreshold)
                 AddOnce(errors, $"Порог должен быть от {MinThreshold} до {MaxThreshold} мс");
         }
+        return errors;
+    }
+
+    public const string PercentThresholdError = "Порог нагрузки и памяти должен быть от 1 до 100 %";
+    public const string TempThresholdError = "Порог температуры должен быть от 1 до 150 °C";
+
+    public static IReadOnlyList<string> ValidateThresholds(MetricThresholds t)
+    {
+        var errors = new List<string>();
+        foreach (var k in Enum.GetValues<MetricKind>())
+            if (!MetricThresholds.IsInRange(k, t.Of(k)))
+                AddOnce(errors, MetricThresholds.IsTemperature(k) ? TempThresholdError : PercentThresholdError);
         return errors;
     }
 
