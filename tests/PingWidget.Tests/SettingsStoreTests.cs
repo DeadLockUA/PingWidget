@@ -1,4 +1,5 @@
 using PingWidget.Core;
+using PingWidget.Core.Metrics;
 
 namespace PingWidget.Tests;
 
@@ -116,5 +117,54 @@ public class SettingsStoreTests : IDisposable
     {
         SettingsStore.Save(AppSettings.Defaults(), FilePath);
         Assert.True(File.Exists(FilePath));
+    }
+
+    [Fact]
+    public void Load_V1FileWithoutMetricThresholds_Defaults()
+    {
+        var t = LoadJson("""{"Hosts":[{"Address":"8.8.8.8","ThresholdMs":100}],"ShowOnDesktop":true}""").MetricThresholds;
+        Assert.Equal(90, t.CpuLoad);
+        Assert.Equal(80, t.CpuTemp);
+        Assert.Equal(90, t.RamUsed);
+        Assert.Equal(90, t.GpuLoad);
+        Assert.Equal(90, t.VramUsed);
+        Assert.Equal(80, t.GpuTemp);
+    }
+
+    [Fact]
+    public void Load_NullMetricThresholds_Defaults() =>
+        Assert.Equal(80, LoadJson("""{"MetricThresholds":null}""").MetricThresholds.GpuTemp);
+
+    [Fact]
+    public void Load_MetricThresholdsClamped()
+    {
+        var t = LoadJson("""{"MetricThresholds":{"CpuLoad":0,"CpuTemp":999,"RamUsed":150}}""").MetricThresholds;
+        Assert.Equal(1, t.CpuLoad);
+        Assert.Equal(150, t.CpuTemp);
+        Assert.Equal(100, t.RamUsed);
+        Assert.Equal(90, t.GpuLoad);
+        Assert.Equal(80, t.GpuTemp);
+    }
+
+    [Fact]
+    public void SaveThenLoad_RoundTripsThresholds()
+    {
+        var s = AppSettings.Defaults();
+        s.MetricThresholds.GpuTemp = 85;
+        s.MetricThresholds.VramUsed = 70;
+        SettingsStore.Save(s, FilePath);
+        var t = SettingsStore.Load(FilePath).MetricThresholds;
+        Assert.Equal(85, t.GpuTemp);
+        Assert.Equal(70, t.VramUsed);
+    }
+
+    [Fact]
+    public void Thresholds_OfKind()
+    {
+        var t = new MetricThresholds { GpuTemp = 85 };
+        Assert.Equal(85, t.Of(MetricKind.GpuTemp));
+        Assert.Equal(90, t.Of(MetricKind.CpuLoad));
+        Assert.True(MetricThresholds.IsTemperature(MetricKind.CpuTemp));
+        Assert.False(MetricThresholds.IsTemperature(MetricKind.VramUsed));
     }
 }

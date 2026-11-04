@@ -1,4 +1,5 @@
 using PingWidget.Core;
+using PingWidget.Core.Metrics;
 using PingWidget.Settings;
 
 namespace PingWidget.Tests;
@@ -32,4 +33,17 @@ public class HostListValidatorTests
     [Fact]
     public void EmptyList() =>
         Assert.Equal(["Добавьте хотя бы один адрес"], HostListValidator.Validate([]));
+
+    [Fact]
+    public void ValidateThresholds_Defaults_Valid() => Assert.Empty(HostListValidator.ValidateThresholds(new MetricThresholds()));
+
+    [Fact]
+    public void ValidateThresholds_PercentOutOfRange() =>
+        Assert.Equal(["Порог нагрузки и памяти должен быть от 1 до 100 %"],
+            HostListValidator.ValidateThresholds(new MetricThresholds { GpuLoad = 101, RamUsed = 0 }));
+
+    [Fact]
+    public void ValidateThresholds_TempOutOfRange() =>
+        Assert.Equal(["Порог температуры должен быть от 1 до 150 °C"],
+            HostListValidator.ValidateThresholds(new MetricThresholds { GpuTemp = 0 }));
 }
