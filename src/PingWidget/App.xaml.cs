@@ -67,7 +67,7 @@ public partial class App : Application
         var wanted = _tray!.StartWithWindows;
         if (!TrySetAutoStart(wanted))
         {
-            _tray.StartWithWindows = !wanted; // revert the checkbox; this re-enters once and is a no-op
+            _tray.SetStartWithWindowsSilently(!wanted); // registry not writable: revert without re-entering
             return;
         }
         _settings.StartWithWindows = wanted;

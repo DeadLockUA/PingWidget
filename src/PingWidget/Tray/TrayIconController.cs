@@ -14,6 +14,7 @@ public sealed class TrayIconController : IDisposable
     private readonly Icon _green = MakeDot(Color.FromArgb(0x4c, 0xd9, 0x7b));
     private readonly Icon _red = MakeDot(Color.FromArgb(0xff, 0x4d, 0x4d));
     private bool? _healthy;
+    private bool _silent;
 
     public TrayIconController()
     {
@@ -22,7 +23,10 @@ public sealed class TrayIconController : IDisposable
         var settingsItem = new ToolStripMenuItem("Настройки…");
         settingsItem.Click += (_, _) => SettingsRequested?.Invoke(this, EventArgs.Empty);
         _autoStartItem = new ToolStripMenuItem("Запускать с Windows") { CheckOnClick = true };
-        _autoStartItem.CheckedChanged += (_, _) => StartWithWindowsToggled?.Invoke(this, EventArgs.Empty);
+        _autoStartItem.CheckedChanged += (_, _) =>
+        {
+            if (!_silent) StartWithWindowsToggled?.Invoke(this, EventArgs.Empty);
+        };
         var exitItem = new ToolStripMenuItem("Выход");
         exitItem.Click += (_, _) => ExitRequested?.Invoke(this, EventArgs.Empty);
 
@@ -52,6 +56,14 @@ public sealed class TrayIconController : IDisposable
     {
         get => _autoStartItem.Checked;
         set => _autoStartItem.Checked = value;
+    }
+
+    /// <summary>Changes the checkbox without raising <see cref="StartWithWindowsToggled"/> (used to revert a failed change).</summary>
+    public void SetStartWithWindowsSilently(bool value)
+    {
+        _silent = true;
+        try { _autoStartItem.Checked = value; }
+        finally { _silent = false; }
     }
 
     public void SetHealthy(bool healthy)
