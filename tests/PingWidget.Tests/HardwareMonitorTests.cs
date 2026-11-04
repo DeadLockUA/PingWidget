@@ -141,4 +141,30 @@ public class HardwareMonitorTests
         Thread.Sleep(300);
         Assert.NotNull(SensorPicker.Pick(src.ReadSensors())[MetricKind.CpuLoad].Value);
     }
+
+    [Fact]
+    public void LhmHardwareSource_DoesNotProbeMemoryBus()
+    {
+        using var src = new LhmHardwareSource();
+        Assert.False(src.MemoryGroupEnabled);
+    }
+
+    [Fact]
+    public void LhmHardwareSource_RamFromWindows()
+    {
+        using var src = new LhmHardwareSource();
+        var ram = SensorPicker.Pick(src.ReadSensors())[MetricKind.RamUsed];
+        Assert.InRange(ram.Value!.Value, 1, 100);
+        Assert.True(ram.TotalGb > 1);
+        Assert.True(ram.UsedGb > 0 && ram.UsedGb < ram.TotalGb);
+    }
+
+    [Fact]
+    public void LhmHardwareSource_KeepsNoSensorHistory()
+    {
+        using var src = new LhmHardwareSource();
+        src.ReadSensors();
+        Assert.NotEmpty(src.AllSensors);
+        Assert.All(src.AllSensors, s => Assert.Equal(TimeSpan.Zero, s.ValuesTimeWindow));
+    }
 }
