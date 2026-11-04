@@ -28,7 +28,7 @@ public partial class WidgetWindow : Window
         _monitor.Updated += OnMonitorUpdated;
         Loaded += (_, _) => PlaceOnScreen(_settings.WindowLeft, _settings.WindowTop);
         // Card grows when hosts are added: keep it fully on its screen.
-        SizeChanged += (_, _) => { if (IsLoaded) PlaceOnScreen(Left, Top); };
+        SizeChanged += (_, _) => { if (IsLoaded) PlaceOnScreen(Left, Top, snapToNearest: true); };
     }
 
     private void OnMonitorUpdated(object? sender, EventArgs e) => Dispatcher.BeginInvoke(RefreshRows);
@@ -69,15 +69,15 @@ public partial class WidgetWindow : Window
     {
         if (e.ButtonState != MouseButtonState.Pressed) return;
         DragMove();
-        PlaceOnScreen(Left, Top);
+        PlaceOnScreen(Left, Top, snapToNearest: true);
         _settings.WindowLeft = Left;
         _settings.WindowTop = Top;
         _saveSettings();
     }
 
-    private void PlaceOnScreen(double? left, double? top)
+    private void PlaceOnScreen(double? left, double? top, bool snapToNearest = false)
     {
-        var (x, y) = PlacementResolver.Resolve(left, top, ActualWidth, ActualHeight, GetScreens());
+        var (x, y) = PlacementResolver.Resolve(left, top, ActualWidth, ActualHeight, GetScreens(), snapToNearest: snapToNearest);
         if (Left != x) Left = x;
         if (Top != y) Top = y;
     }

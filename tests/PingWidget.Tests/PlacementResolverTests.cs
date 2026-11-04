@@ -29,6 +29,21 @@ public class PlacementResolverTests
         Assert.Equal((-1000d, 200d), PlacementResolver.Resolve(-1000, 200, 300, 150, [Primary, Left]));
 
     [Fact]
+    public void Drag_SlightlyPastOuterEdgeOfSecondary_ClampsOntoSecondary() =>
+        Assert.Equal((3540d, 100d), PlacementResolver.Resolve(3900, 100, 300, 150, [Primary, Right], snapToNearest: true));
+
+    [Fact]
+    public void Drag_SlightlyLeftOfPrimary_ClampsToZero() =>
+        Assert.Equal((0d, 100d), PlacementResolver.Resolve(-5, 100, 300, 150, [Primary], snapToNearest: true));
+
+    [Fact]
+    public void Drag_BelowShorterMonitor_ClampsOntoNearest()
+    {
+        var shortRight = new ScreenArea(1920, 0, 1920, 800, false);
+        Assert.Equal((2500d, 650d), PlacementResolver.Resolve(2500, 900, 300, 150, [Primary, shortRight], snapToNearest: true));
+    }
+
+    [Fact]
     public void NoPrimaryFlag_UsesFirstScreen() =>
         Assert.Equal((1608d, 878d), PlacementResolver.Resolve(null, null, 300, 150, [Primary with { IsPrimary = false }]));
 }
