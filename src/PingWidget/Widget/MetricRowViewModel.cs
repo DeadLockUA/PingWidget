@@ -6,6 +6,7 @@ namespace PingWidget.Widget;
 public sealed class MetricRowViewModel : INotifyPropertyChanged
 {
     private IReadOnlyList<MetricReading> _readings = [];
+    private string? _topProcess;
 
     public MetricRowViewModel(MetricKind kind, string label, double threshold)
     {
@@ -30,6 +31,18 @@ public sealed class MetricRowViewModel : INotifyPropertyChanged
             Raise(nameof(Values));
             Raise(nameof(CurrentText));
             Raise(nameof(IsAboveThreshold));
+        }
+    }
+
+    /// <summary>Heaviest process for this metric; null on rows that don't show one.</summary>
+    public string? TopProcess
+    {
+        get => _topProcess;
+        set
+        {
+            if (_topProcess == value) return;
+            _topProcess = value;
+            Raise(nameof(TopProcess));
         }
     }
 

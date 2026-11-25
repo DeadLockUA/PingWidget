@@ -13,6 +13,7 @@ public partial class WidgetWindow : Window
 {
     private readonly PingMonitor _monitor;
     private readonly HardwareMonitor _hardware;
+    private readonly TopProcessMonitor _topProcesses;
     private readonly AppSettings _settings;
     private readonly Action _saveSettings;
     private readonly ObservableCollection<HostRowViewModel> _rows = [];
@@ -21,11 +22,12 @@ public partial class WidgetWindow : Window
     private readonly ObservableCollection<MetricRowViewModel> _ramRows = [];
     private readonly ObservableCollection<MetricRowViewModel> _gpuRows = [];
 
-    public WidgetWindow(PingMonitor monitor, HardwareMonitor hardware, AppSettings settings, Action saveSettings)
+    public WidgetWindow(PingMonitor monitor, HardwareMonitor hardware, TopProcessMonitor topProcesses, AppSettings settings, Action saveSettings)
     {
         InitializeComponent();
         _monitor = monitor;
         _hardware = hardware;
+        _topProcesses = topProcesses;
         _settings = settings;
         _saveSettings = saveSettings;
         Rows.ItemsSource = _rows;
@@ -66,8 +68,18 @@ public partial class WidgetWindow : Window
 
     private void RefreshMetricRows()
     {
+        var top = _topProcesses.Current;
         foreach (var row in _cpuRows.Concat(_ramRows).Concat(_gpuRows))
+        {
             row.Readings = _hardware.HistoryFor(row.Kind).Snapshot();
+            row.TopProcess = row.Kind switch
+            {
+                MetricKind.CpuLoad => top.Cpu ?? "—",
+                MetricKind.RamUsed => top.Ram ?? "—",
+                MetricKind.GpuLoad => top.Gpu ?? "—",
+                _ => null,
+            };
+        }
     }
 
     /// <summary>Rebuilds rows if the host list changed, then pulls the latest samples.</summary>

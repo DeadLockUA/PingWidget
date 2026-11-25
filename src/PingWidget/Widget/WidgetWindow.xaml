@@ -29,6 +29,8 @@
                            VerticalAlignment="Center" />
                 <TextBlock DockPanel.Dock="Left" Width="100" Margin="0,0,6,0" TextAlignment="Right"
                            VerticalAlignment="Center" Text="{Binding CurrentText}" Style="{StaticResource ValueText}" />
+                <TextBlock DockPanel.Dock="Right" Width="124" Margin="6,0,0,0" Foreground="#aaaaaa" Text="{Binding TopProcess}"
+                           VerticalAlignment="Center" TextTrimming="CharacterEllipsis" />
                 <w:HeartbeatChart Values="{Binding Values}" Threshold="{Binding Threshold}" FixedMax="100" MarkMissing="False" />
             </DockPanel>
         </DataTemplate>
@@ -40,7 +42,7 @@
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="280" />
                 <ColumnDefinition Width="12" />
-                <ColumnDefinition Width="270" />
+                <ColumnDefinition Width="400" />
             </Grid.ColumnDefinitions>
 
             <ItemsControl x:Name="Rows" Grid.Column="0">

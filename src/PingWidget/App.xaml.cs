@@ -14,6 +14,7 @@ public partial class App : Application
     private AppSettings _settings = AppSettings.Defaults();
     private PingMonitor? _monitor;
     private HardwareMonitor? _hardware;
+    private TopProcessMonitor? _topProcesses;
     private WidgetWindow? _widget;
     private TrayIconController? _tray;
     private SettingsWindow? _settingsWindow;
@@ -57,7 +58,9 @@ public partial class App : Application
 
         _hardware = new HardwareMonitor(() => new LhmHardwareSource());
 
-        _widget = new WidgetWindow(_monitor, _hardware, _settings, SaveSettings);
+        _topProcesses = new TopProcessMonitor(() => new WindowsProcessSource());
+
+        _widget = new WidgetWindow(_monitor, _hardware, _topProcesses, _settings, SaveSettings);
 
         _tray = new TrayIconController
         {
@@ -72,6 +75,7 @@ public partial class App : Application
         ApplyShowOnDesktop(_settings.ShowOnDesktop, save: false);
         _monitor.Start(TimeSpan.FromSeconds(1));
         _hardware.Start(TimeSpan.FromSeconds(1));
+        _topProcesses.Start(TimeSpan.FromSeconds(3)); // slower than the graphs so the names stay readable
     }
 
     private void ApplyShowOnDesktop(bool show, bool save)
@@ -161,6 +165,7 @@ public partial class App : Application
             SaveSettings();
         }
         _hardware?.Dispose();
+        _topProcesses?.Dispose();
         _tray?.Dispose();
         _singleInstance?.ReleaseMutex();
         _singleInstance?.Dispose();

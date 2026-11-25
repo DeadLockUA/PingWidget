@@ -33,6 +33,18 @@ public class MetricRowViewModelTests
     public void NoReadings() => Assert.Equal("—", new MetricRowViewModel(MetricKind.GpuLoad, "Load", 90).CurrentText);
 
     [Fact]
+    public void TopProcess_RaisesChangeOnlyWhenNameChanges()
+    {
+        var vm = new MetricRowViewModel(MetricKind.CpuLoad, "Load", 90);
+        var changed = 0;
+        vm.PropertyChanged += (_, e) => { if (e.PropertyName == nameof(MetricRowViewModel.TopProcess)) changed++; };
+        vm.TopProcess = "chrome";
+        vm.TopProcess = "chrome";
+        Assert.Equal("chrome", vm.TopProcess);
+        Assert.Equal(1, changed);
+    }
+
+    [Fact]
     public void ValuesProjection_AndPropertyChanged()
     {
         var vm = new MetricRowViewModel(MetricKind.GpuLoad, "Load", 90);
