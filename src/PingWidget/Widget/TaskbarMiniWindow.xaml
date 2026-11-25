@@ -1,0 +1,32 @@
+<Window x:Class="PingWidget.Widget.TaskbarMiniWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:w="clr-namespace:PingWidget.Widget"
+        Title="PingWidget mini"
+        Width="170" Height="40"
+        WindowStyle="None" AllowsTransparency="True" Background="Transparent"
+        ResizeMode="NoResize" Topmost="True" ShowInTaskbar="False" ShowActivated="False"
+        FontFamily="Segoe UI" FontSize="10"
+        ToolTip="Клик — развернуть, перетаскивание — сдвинуть">
+    <Border CornerRadius="4" Background="#1b1d22" Padding="5,1,5,2" Cursor="Hand"
+            MouseLeftButtonDown="OnMouseLeftButtonDown">
+        <DockPanel>
+            <DockPanel DockPanel.Dock="Top">
+                <TextBlock DockPanel.Dock="Right" Text="{Binding CurrentText}">
+                    <TextBlock.Style>
+                        <Style TargetType="TextBlock">
+                            <Setter Property="Foreground" Value="#4cd97b" />
+                            <Style.Triggers>
+                                <DataTrigger Binding="{Binding IsAboveThreshold}" Value="True">
+                                    <Setter Property="Foreground" Value="#ff4d4d" />
+                                </DataTrigger>
+                            </Style.Triggers>
+                        </Style>
+                    </TextBlock.Style>
+                </TextBlock>
+                <TextBlock Text="{Binding Address}" Foreground="#dddddd" TextTrimming="CharacterEllipsis" />
+            </DockPanel>
+            <w:HeartbeatChart Values="{Binding Values}" Threshold="{Binding ThresholdMs}" />
+        </DockPanel>
+    </Border>
+</Window>

@@ -23,6 +23,40 @@
             <Setter Property="Margin" Value="0,4,0,0" />
         </Style>
 
+        <Style x:Key="CaptionButton" TargetType="Button">
+            <Setter Property="Width" Value="24" />
+            <Setter Property="Height" Value="18" />
+            <Setter Property="Margin" Value="2,0,0,0" />
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets" />
+            <Setter Property="FontSize" Value="9" />
+            <Setter Property="Foreground" Value="#888888" />
+            <Setter Property="Background" Value="Transparent" />
+            <Setter Property="Focusable" Value="False" />
+            <Setter Property="Cursor" Value="Hand" />
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="Button">
+                        <Border x:Name="Bg" CornerRadius="3" Background="{TemplateBinding Background}">
+                            <ContentPresenter HorizontalAlignment="Center" VerticalAlignment="Center" />
+                        </Border>
+                        <ControlTemplate.Triggers>
+                            <Trigger Property="IsMouseOver" Value="True">
+                                <Setter TargetName="Bg" Property="Background" Value="#33363d" />
+                                <Setter Property="Foreground" Value="#ffffff" />
+                            </Trigger>
+                            <MultiTrigger>
+                                <MultiTrigger.Conditions>
+                                    <Condition Property="IsMouseOver" Value="True" />
+                                    <Condition Property="Tag" Value="close" />
+                                </MultiTrigger.Conditions>
+                                <Setter TargetName="Bg" Property="Background" Value="#c42b1c" />
+                            </MultiTrigger>
+                        </ControlTemplate.Triggers>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>
+
         <DataTemplate x:Key="MetricRow" DataType="{x:Type w:MetricRowViewModel}">
             <DockPanel Height="16" Margin="0,2,0,2" LastChildFill="True">
                 <TextBlock DockPanel.Dock="Left" Width="44" Foreground="#aaaaaa" Text="{Binding Label}"
@@ -58,6 +92,14 @@
                     </DataTemplate>
                 </ItemsControl.ItemTemplate>
             </ItemsControl>
+
+            <StackPanel Grid.Column="2" Orientation="Horizontal" HorizontalAlignment="Right" VerticalAlignment="Top"
+                        Margin="0,2,-4,0" Panel.ZIndex="1">
+                <Button Style="{StaticResource CaptionButton}" Content="&#xE921;" ToolTip="Свернуть на панель задач"
+                        Click="OnMinimizeClick" />
+                <Button Style="{StaticResource CaptionButton}" Content="&#xE8BB;" ToolTip="Скрыть в трей"
+                        Tag="close" Click="OnCloseClick" />
+            </StackPanel>
 
             <StackPanel Grid.Column="2">
                 <TextBlock Text="CPU" Style="{StaticResource SectionCaption}" />

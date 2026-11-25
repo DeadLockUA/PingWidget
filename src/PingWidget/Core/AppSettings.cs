@@ -9,6 +9,9 @@ public sealed class AppSettings
     public bool StartWithWindows { get; set; }
     public double? WindowLeft { get; set; }
     public double? WindowTop { get; set; }
+    /// <summary>True: shown as the small first-host graph on the taskbar instead of the full card.</summary>
+    public bool Minimized { get; set; }
+    public double? MiniLeft { get; set; }
     public MetricThresholds MetricThresholds { get; set; } = new();
 
     public static AppSettings Defaults() => new();

@@ -16,6 +16,7 @@ public partial class App : Application
     private HardwareMonitor? _hardware;
     private TopProcessMonitor? _topProcesses;
     private WidgetWindow? _widget;
+    private TaskbarMiniWindow? _mini;
     private TrayIconController? _tray;
     private SettingsWindow? _settingsWindow;
 
@@ -61,6 +62,10 @@ public partial class App : Application
         _topProcesses = new TopProcessMonitor(() => new WindowsProcessSource());
 
         _widget = new WidgetWindow(_monitor, _hardware, _topProcesses, _settings, SaveSettings);
+        _mini = new TaskbarMiniWindow(_settings, SaveSettings) { DataContext = _widget.FirstRow };
+        _widget.FirstRowChanged += (_, _) => _mini.DataContext = _widget.FirstRow;
+        _widget.MinimizeRequested += (_, _) => SetMinimized(true);
+        _mini.RestoreRequested += (_, _) => SetMinimized(false);
 
         _tray = new TrayIconController
         {
@@ -71,6 +76,7 @@ public partial class App : Application
         _tray.StartWithWindowsToggled += (_, _) => OnStartWithWindowsToggled();
         _tray.SettingsRequested += (_, _) => OpenSettings();
         _tray.ExitRequested += (_, _) => Shutdown();
+        _widget.CloseRequested += (_, _) => _tray.ShowOnDesktop = false; // raises ShowOnDesktopToggled
 
         ApplyShowOnDesktop(_settings.ShowOnDesktop, save: false);
         _monitor.Start(TimeSpan.FromSeconds(1));
@@ -80,11 +86,30 @@ public partial class App : Application
 
     private void ApplyShowOnDesktop(bool show, bool save)
     {
-        if (show) _widget?.Show();
-        else _widget?.Hide();
-        if (!save) return;
-        _settings.ShowOnDesktop = show;
+        if (save)
+        {
+            _settings.ShowOnDesktop = show;
+            if (!show) _settings.Minimized = false; // hidden to tray: bring back the full card next time
+            SaveSettings();
+        }
+        UpdateWindows();
+    }
+
+    private void SetMinimized(bool minimized)
+    {
+        _settings.Minimized = minimized;
         SaveSettings();
+        UpdateWindows();
+    }
+
+    /// <summary>Shows exactly one of: the full card, the taskbar mini graph, or nothing (tray only).</summary>
+    private void UpdateWindows()
+    {
+        var show = _settings.ShowOnDesktop;
+        if (show && !_settings.Minimized) _widget?.Show();
+        else _widget?.Hide();
+        if (show && _settings.Minimized) _mini?.Show();
+        else _mini?.Hide();
     }
 
     private void OnStartWithWindowsToggled()
