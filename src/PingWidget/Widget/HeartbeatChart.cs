@@ -25,6 +25,17 @@ public sealed class HeartbeatChart : FrameworkElement
         nameof(MarkMissing), typeof(bool), typeof(HeartbeatChart),
         new FrameworkPropertyMetadata(true, FrameworkPropertyMetadataOptions.AffectsRender));
 
+    /// <summary>How many most recent samples fill the width (one per second).</summary>
+    public static readonly DependencyProperty CapacityProperty = DependencyProperty.Register(
+        nameof(Capacity), typeof(int), typeof(HeartbeatChart),
+        new FrameworkPropertyMetadata(120, FrameworkPropertyMetadataOptions.AffectsRender));
+
+    public int Capacity
+    {
+        get => (int)GetValue(CapacityProperty);
+        set => SetValue(CapacityProperty, value);
+    }
+
     public bool MarkMissing
     {
         get => (bool)GetValue(MarkMissingProperty);
@@ -70,7 +81,7 @@ public sealed class HeartbeatChart : FrameworkElement
         if (w <= 0 || h <= 0) return;
 
         dc.DrawRectangle(ChartBackground, null, new Rect(0, 0, w, h));
-        var layout = ChartGeometry.Compute(Values ?? Array.Empty<double?>(), Threshold, w, h,
+        var layout = ChartGeometry.Compute(Values ?? Array.Empty<double?>(), Threshold, w, h, capacity: Math.Max(2, Capacity),
             fixedMax: double.IsNaN(FixedMax) ? null : FixedMax, markMissing: MarkMissing);
 
         dc.DrawLine(ThresholdPen, new Point(0, layout.ThresholdY), new Point(w, layout.ThresholdY));

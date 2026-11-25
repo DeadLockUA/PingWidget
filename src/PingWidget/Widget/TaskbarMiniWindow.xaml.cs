@@ -9,7 +9,7 @@ using PingWidget.Core;
 namespace PingWidget.Widget;
 
 /// <summary>
-/// The minimized widget: the first host's graph, docked on the taskbar just left of the tray.
+/// The minimized widget: the first three hosts' last 15 seconds side by side, docked on the taskbar just left of the tray.
 /// Click restores the full widget; drag slides it along the taskbar.
 /// </summary>
 public partial class TaskbarMiniWindow : Window
@@ -33,6 +33,12 @@ public partial class TaskbarMiniWindow : Window
     }
 
     public event EventHandler? RestoreRequested;
+
+    /// <summary>Hosts drawn side by side (the first three).</summary>
+    public IReadOnlyList<HostRowViewModel> Rows
+    {
+        set => Hosts.ItemsSource = value;
+    }
 
     protected override void OnSourceInitialized(EventArgs e)
     {

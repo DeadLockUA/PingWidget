@@ -46,11 +46,11 @@ public partial class WidgetWindow : Window
 
     public event EventHandler? MinimizeRequested;
     public event EventHandler? CloseRequested;
-    /// <summary>Raised when the host rows are recreated, so the taskbar view can rebind to the new first row.</summary>
-    public event EventHandler? FirstRowChanged;
+    /// <summary>Raised when the host rows are recreated, so the taskbar view can rebind to the new rows.</summary>
+    public event EventHandler? RowsChanged;
 
-    /// <summary>The first host's row: what the minimized taskbar view shows.</summary>
-    public HostRowViewModel? FirstRow => _rows.FirstOrDefault();
+    /// <summary>The first three hosts: what the minimized taskbar view shows.</summary>
+    public IReadOnlyList<HostRowViewModel> TaskbarRows => _rows.Take(3).ToList();
 
     private void OnMinimizeClick(object sender, RoutedEventArgs e) => MinimizeRequested?.Invoke(this, EventArgs.Empty);
 
@@ -103,7 +103,7 @@ public partial class WidgetWindow : Window
             _shownHosts = hosts;
             _rows.Clear();
             foreach (var h in hosts) _rows.Add(new HostRowViewModel(h.Address.Trim(), h.ThresholdMs));
-            FirstRowChanged?.Invoke(this, EventArgs.Empty);
+            RowsChanged?.Invoke(this, EventArgs.Empty);
         }
         foreach (var row in _rows)
         {

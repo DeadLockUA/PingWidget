@@ -62,8 +62,8 @@ public partial class App : Application
         _topProcesses = new TopProcessMonitor(() => new WindowsProcessSource());
 
         _widget = new WidgetWindow(_monitor, _hardware, _topProcesses, _settings, SaveSettings);
-        _mini = new TaskbarMiniWindow(_settings, SaveSettings) { DataContext = _widget.FirstRow };
-        _widget.FirstRowChanged += (_, _) => _mini.DataContext = _widget.FirstRow;
+        _mini = new TaskbarMiniWindow(_settings, SaveSettings) { Rows = _widget.TaskbarRows };
+        _widget.RowsChanged += (_, _) => _mini.Rows = _widget.TaskbarRows;
         _widget.MinimizeRequested += (_, _) => SetMinimized(true);
         _mini.RestoreRequested += (_, _) => SetMinimized(false);
 
